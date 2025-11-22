@@ -1,0 +1,31 @@
+{
+  "name": "ember-sniff",
+  "version": "1.0.0",
+  "description": "ZigBee to PCAP sniffing CLI for EmberZNet-based adapters using ember-zli / zigbee-herdsman 'ember' driver",
+  "type": "module",
+  "bin": "./index.js",
+  "files": [
+    "*.js",
+    "!.yarn/**"
+  ],
+  "author": {
+    "name": "Kristian Kraljic",
+    "email": "kris@kra.lc",
+    "url": "https://kra.lc/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kristian/ember-sniff.git"
+  },
+  "homepage": "https://github.com/kristian/ember-sniff",
+  "bugs": {
+    "url": "https://github.com/kristian/ember-sniff/issues"
+  },
+  "license": "Apache-2.0",
+  "dependencies": {
+    "commander": "^14.0.2",
+    "ember-zli": "^3.3.2",
+    "zigbee-herdsman": "^6.4.2"
+  },
+  "packageManager": "yarn@4.11.0"
+}
