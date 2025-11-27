@@ -967,6 +967,8 @@ __metadata:
     commander: "npm:^14.0.2"
     ember-zli: "npm:^3.3.2"
     zigbee-herdsman: "npm:^6.4.2"
+  bin:
+    ember-sniff: ./index.js
   languageName: unknown
   linkType: soft
 

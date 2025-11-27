@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 import './silence-ember-zli.js';
 import { createWriteStream } from 'node:fs';
+import { exit } from 'node:process';
 
 import { setLogger } from 'zigbee-herdsman';
-import { SLStatus } from 'zigbee-herdsman/dist/adapter/ember/enums.js';
+import { SLStatus, EzspStatus } from 'zigbee-herdsman/dist/adapter/ember/enums.js';
 import { createPcapFileHeader as createPcapHeader, createPcapPacketRecordMs, PCAP_MAGIC_NUMBER_MS } from 'ember-zli/dist/utils/wireshark.js';
 
 import { emberStart } from 'ember-zli/dist/utils/ember.js';
@@ -63,3 +64,8 @@ ezsp.ezspMfglibRxHandler = (linkQuality, rssi, data) => {
   data.set(computeCRC16CITTKermit(data.subarray(0, -2)), data.length - 2); // fix static CRC used in EZSP >= v8
   pcapWriteStream.write(createPcapPacketRecordMs(data));
 };
+
+ezsp.on('ncpNeedsResetAndInit', status => {
+  logger.error(`Adapter needs restarting: status=${EzspStatus[status]}`);
+  exit(1); // error or fatal error by the ember adapter
+});
