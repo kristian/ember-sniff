@@ -28,16 +28,24 @@ program
 const options = program.opts();
 
 // when output to stdout (no -o flag), disable logging by default unless -v is specified
+function writeLog(messageOrLambda, namespace) {
+  const message =
+    typeof messageOrLambda === 'function'
+      ? messageOrLambda()
+      : messageOrLambda;
+
+  // all logging shall go to stderr, so that stdout (PCAP) is not polluted with log messages
+  process.stderr.write(
+    `[${new Date().toISOString()}] ${namespace}: ${message}\n`
+  );
+}
+
 const logLevel = options.verbose ?? (options.out ? 1 : -1);
 const logger = {
-  debug:  logLevel < 3 ? () => {} :
-    (messageOrLambda, namespace) => console.debug(`[${new Date().toISOString()}] ${namespace}: ${typeof messageOrLambda === "function" ? messageOrLambda() : messageOrLambda}`),
-  info:   logLevel < 2 ? () => {} :
-    (messageOrLambda, namespace) => console.info(`[${new Date().toISOString()}] ${namespace}: ${typeof messageOrLambda === "function" ? messageOrLambda() : messageOrLambda}`),
-  warning:logLevel < 1 ? () => {} :
-    (messageOrLambda, namespace) => console.warn(`[${new Date().toISOString()}] ${namespace}: ${typeof messageOrLambda === "function" ? messageOrLambda() : messageOrLambda}`),
-  error:  logLevel < 0 ? () => {} :
-    (messageOrLambda, namespace) => console.error(`[${new Date().toISOString()}] ${namespace}: ${typeof messageOrLambda === "function" ? messageOrLambda() : messageOrLambda}`)
+  debug:   logLevel >= 3 ? writeLog : () => {},
+  info:    logLevel >= 2 ? writeLog : () => {},
+  warning: logLevel >= 1 ? writeLog : () => {},
+  error:   logLevel >= 0 ? writeLog : () => {}
 };
 setLogger(logger);
 
