@@ -994,7 +994,7 @@ __metadata:
   dependencies:
     commander: "npm:^15.0.0"
     ember-zli: "npm:^4.2.3"
-    zigbee-herdsman: "npm:^10.6.1"
+    zigbee-herdsman: "npm:^10.6.2"
   bin:
     ember-sniff: ./index.js
   languageName: unknown
@@ -1989,7 +1989,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"zigbee-herdsman@npm:^10.6.0, zigbee-herdsman@npm:^10.6.1":
+"zigbee-herdsman@npm:^10.6.0":
   version: 10.6.1
   resolution: "zigbee-herdsman@npm:10.6.1"
   dependencies:
@@ -2003,6 +2003,23 @@ __metadata:
     slip: "npm:^1.0.2"
     zigbee-on-host: "npm:^0.2.4"
   checksum: 10c0/29522368b863f014d9877a101c3012dde724f1b2b558ba65e63e0d2da87f27addd15aaaaacf36c902dcd8d39d5bb84cdeca4c801fb36db5d0079322718f85e2e
+  languageName: node
+  linkType: hard
+
+"zigbee-herdsman@npm:^10.6.2":
+  version: 10.6.2
+  resolution: "zigbee-herdsman@npm:10.6.2"
+  dependencies:
+    "@date-fns/tz": "npm:^1.5.0"
+    "@serialport/bindings-cpp": "npm:^13.0.1"
+    "@serialport/parser-delimiter": "npm:^13.0.0"
+    "@serialport/stream": "npm:^13.0.0"
+    bonjour-service: "npm:^1.4.2"
+    debounce: "npm:^3.0.0"
+    fast-deep-equal: "npm:^3.1.3"
+    slip: "npm:^1.0.2"
+    zigbee-on-host: "npm:^0.2.4"
+  checksum: 10c0/8c1296b097dbb3ba533519f0abdcf9c7bc6e270905cfc46fd7bd2c247c2bfdef96e3106537e0c84116bdbaa738c22448bf6adee1dac000cf7be78d76cfa3b30b
   languageName: node
   linkType: hard
 

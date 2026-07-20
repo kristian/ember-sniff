@@ -30,22 +30,27 @@ const options = program.opts();
 // when output to stdout (no -o flag), disable logging by default unless -v is specified
 const logLevel = options.verbose ?? (options.out ? 1 : -1);
 const logger = {
-  debug:  logLevel >= 3 ? console.log : () => {},
-  info:   logLevel >= 2 ? console.log : () => {},
-  warning:logLevel >= 1 ? console.warn : () => {},
-  error:  logLevel >= 0 ? console.error : () => {}
+  debug:  logLevel < 3 ? () => {} :
+    (messageOrLambda, namespace) => console.debug(`[${new Date().toISOString()}] ${namespace}: ${typeof messageOrLambda === "function" ? messageOrLambda() : messageOrLambda}`),
+  info:   logLevel < 2 ? () => {} :
+    (messageOrLambda, namespace) => console.info(`[${new Date().toISOString()}] ${namespace}: ${typeof messageOrLambda === "function" ? messageOrLambda() : messageOrLambda}`),
+  warning:logLevel < 1 ? () => {} :
+    (messageOrLambda, namespace) => console.warn(`[${new Date().toISOString()}] ${namespace}: ${typeof messageOrLambda === "function" ? messageOrLambda() : messageOrLambda}`),
+  error:  logLevel < 0 ? () => {} :
+    (messageOrLambda, namespace) => console.error(`[${new Date().toISOString()}] ${namespace}: ${typeof messageOrLambda === "function" ? messageOrLambda() : messageOrLambda}`)
 };
 setLogger(logger);
 
 const { path, baudRate, rtscts } = options;
 const portConf = { path, baudRate, rtscts, xon: !rtscts, xoff: !rtscts };
-logger.debug(`Using port conf: ${JSON.stringify(portConf)}`);
+logger.debug(`Using port conf: ${JSON.stringify(portConf)}`, 'ember-sniff');
 const ezsp = await emberStart(portConf);
 
 const pcapWriteStream = options.out ? createWriteStream(options.out, 'utf8') : process.stdout;
 pcapWriteStream.write(createPcapHeader(PCAP_MAGIC_NUMBER_MS));
 
-let status = await ezsp.ezspSetRadioPower(options.radioPower); // radio transmit power [-128-127] dBm
+const radioTxPower = options.radioPower;
+let status = await ezsp.ezspSetRadioPower(radioTxPower); // radio transmit power [-128-127] dBm
 if (status !== SLStatus.OK) {
   throw new Error(`Failed to set transmit power to ${radioTxPower} status=${SLStatus[status]}.`);
 }
@@ -66,6 +71,6 @@ ezsp.ezspMfglibRxHandler = (linkQuality, rssi, data) => {
 };
 
 ezsp.on('ncpNeedsResetAndInit', status => {
-  logger.error(`Adapter needs restarting: status=${EzspStatus[status]}`);
+  logger.error(`Adapter needs restarting: status=${EzspStatus[status]}`, 'ember-sniff');
   exit(1); // error or fatal error by the ember adapter
 });
