@@ -3,8 +3,13 @@ import './silence-ember-zli.js';
 import { createWriteStream } from 'node:fs';
 import { exit } from 'node:process';
 
-import { setLogger } from 'zigbee-herdsman';
-import { SLStatus, EzspStatus } from 'zigbee-herdsman/dist/adapter/ember/enums.js';
+import { createRequire } from 'module';
+const requireHere = createRequire(import.meta.url);
+const emberZliPath = requireHere.resolve('ember-zli');
+const requireFromEmberZli = createRequire(emberZliPath);
+
+const setLogger = requireFromEmberZli('zigbee-herdsman').setLogger;
+const { SLStatus, EzspStatus } = requireFromEmberZli('zigbee-herdsman/dist/adapter/ember/enums.js');
 import { createPcapFileHeader as createPcapHeader, createPcapPacketRecordMs, PCAP_MAGIC_NUMBER_MS } from 'ember-zli/dist/utils/wireshark.js';
 
 import { emberStart } from 'ember-zli/dist/utils/ember.js';
@@ -74,6 +79,7 @@ if (status !== SLStatus.OK) {
 }
 
 ezsp.ezspMfglibRxHandler = (linkQuality, rssi, data) => {
+  logger.debug(`Received packet: ${data.toString('hex')} (linkQuality=${linkQuality}, rssi=${rssi})`, 'ember-sniff');
   data.set(computeCRC16CITTKermit(data.subarray(0, -2)), data.length - 2); // fix static CRC used in EZSP >= v8
   pcapWriteStream.write(createPcapPacketRecordMs(data));
 };

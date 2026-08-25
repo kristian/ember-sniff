@@ -12,7 +12,7 @@ const emberZliPath = requireHere.resolve('ember-zli');
 const requireFromEmberZli = createRequire(emberZliPath);
 const winston = requireFromEmberZli('winston');
 
-const debugLog = process.argv.includes('-vvv');
+const debugLog = process.argv.findIndex(arg => arg.startsWith('-vvv')) >= 0;
 
 // patch winston used by ember-zli
 if (winston.transports.Console) {
@@ -21,6 +21,7 @@ if (winston.transports.Console) {
   ConsoleTransport.prototype.log = !debugLog ? function(info, cb) {
       typeof cb === 'function' && cb();
   } : function(...args) {
+    this.forceConsole = true; // force to use _consoleLog instead of console._stdout
     this._consoleLog = this._consoleError; // redirect to stderr   
     originalLog.apply(this, args);
   };
