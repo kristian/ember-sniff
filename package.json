@@ -1,6 +1,6 @@
 {
   "name": "ember-sniff",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "ZigBee to PCAP sniffing CLI for EmberZNet-based adapters using ember-zli / zigbee-herdsman 'ember' driver",
   "type": "module",
   "bin": "./index.js",
