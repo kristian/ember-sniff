@@ -90,35 +90,35 @@ pcapWriteStream.write(createPcapHeader(PCAP_MAGIC_NUMBER_MS));
     pcapWriteStream.write(createPcapPacketRecordMs(data));
   };
 
-  ezsp.on('ncpNeedsResetAndInit', async resetStatus => {
+  ezsp.once('ncpNeedsResetAndInit', async resetStatus => {
     logger.error(`Adapter needs reset: status=${EzspStatus[resetStatus]}`, 'ember-sniff');
     if (options.graceful < 1) {
       exit(1);
     }
 
-    for (let cooldown = 5;; cooldown = Math.min(cooldown * 2, 120)) { // exponential backoff for re-initialization attempts, max. 2 minutes      
-      logger.info(`Attempting to gracefully re-initialize adapter in ${cooldown} seconds...`, 'ember-sniff');
-      await sleep(cooldown * 1000);
-
-      try {
-        const endStatus = await ezsp.mfglibInternalEnd();
-        if (endStatus !== SLStatus.OK) {
-          logger.warning(`Failed to end listening for packets with status=${SLStatus[endStatus]}. Continuing with re-initialization...`, 'ember-sniff');
-        }
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        msg === 'NOT_CONNECTED' || logger.warning(`Failed to end listening for packets: ${msg}. Continuing with re-initialization...`, 'ember-sniff');
+    try { // should not be required, but just in case the adapter is still listening for packets
+      const endStatus = await ezsp.mfglibInternalEnd();
+      if (endStatus !== SLStatus.OK) {
+        logger.warning(`Failed to end listening for packets with status=${SLStatus[endStatus]}. Continuing with re-initialization...`, 'ember-sniff');
       }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      msg === 'NOT_CONNECTED' || logger.warning(`Failed to end listening for packets: ${msg}. Continuing with re-initialization...`, 'ember-sniff');
+    }
 
-      try {
-        await emberStop(ezsp);
-      } catch (err) {
-        logger.warning(`Failed to stop adapter: ${err instanceof Error ? err.message : String(err)}. Continuing with re-initialization...`, 'ember-sniff');
-      }
+    try { // immediately stop, this deregisters all listeners
+      await emberStop(ezsp);
+    } catch (err) {
+      logger.warning(`Failed to stop adapter: ${err instanceof Error ? err.message : String(err)}. Continuing with re-initialization...`, 'ember-sniff');
+    }
+  
+    for (let backoff = 5;; backoff = Math.min(backoff * 2, 120)) { // exponential backoff for re-initialization attempts, max. 2 minutes
+      logger.info(`Attempt to gracefully re-initialize adapter in ${backoff} seconds...`, 'ember-sniff');
+      await sleep(backoff * 1000);
 
       try {
         ezsp = await init(); // re-initialize the adapter gracefully
-        logger.info('Re-initialization successful.', 'ember-sniff');
+        logger.info('Re-initialization successful', 'ember-sniff');
         break;
       } catch (err) {
         logger.error(`Failed to re-initialize adapter: ${err instanceof Error ? err.message : String(err)}`, 'ember-sniff');
