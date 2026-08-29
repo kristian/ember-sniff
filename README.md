@@ -24,6 +24,7 @@ ember-sniff -p <path> -c <channel> [options]
 - `-r, --rtscts` - Enable RTS/CTS flow control
 - `-P, --radio-power <dBm>` - Radio transmit power, default: 5
 - `-o, --out <file>` - Output file (default: stdout)
+- `-g, --graceful` - Graceful restarts on adapter failure: `-g` (single attempt), `-gg` (continuously)
 - `-v, --verbose` - Logging: `-v` (basic), `-vv` (more), `-vvv` (debug)
 
 ### Examples
