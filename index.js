@@ -10,6 +10,7 @@ const requireFromEmberZli = createRequire(emberZliPath);
 
 const setLogger = requireFromEmberZli('zigbee-herdsman').setLogger;
 const { SLStatus, EzspStatus } = requireFromEmberZli('zigbee-herdsman/dist/adapter/ember/enums.js');
+const { AdapterTransport } = requireFromEmberZli("zigbee-herdsman/dist/adapter/transport.js");
 import { createPcapFileHeader as createPcapHeader, createPcapPacketRecordMs, PCAP_MAGIC_NUMBER_MS } from 'ember-zli/dist/utils/wireshark.js';
 
 import { emberStart, emberStop } from 'ember-zli/dist/utils/ember.js';
@@ -66,7 +67,7 @@ const pcapWriteStream = options.out ? createWriteStream(options.out, 'utf8') : p
 pcapWriteStream.write(createPcapHeader(PCAP_MAGIC_NUMBER_MS));
 
 (async function init() {
-  let ezsp = await emberStart(portConf);
+  let ezsp = await emberStart(new AdapterTransport(portConf));
 
   const radioTxPower = options.radioPower;
   let status = await ezsp.ezspSetRadioPower(radioTxPower); // radio transmit power [-128-127] dBm
