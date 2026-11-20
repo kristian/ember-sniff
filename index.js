@@ -67,22 +67,37 @@ const pcapWriteStream = options.out ? createWriteStream(options.out, 'utf8') : p
 pcapWriteStream.write(createPcapHeader(PCAP_MAGIC_NUMBER_MS));
 
 (async function init() {
-  let ezsp = await emberStart(new AdapterTransport(portConf));
+  const trans = new AdapterTransport(portConf);
+  
+  let ezsp;
+  try {
+    ezsp = await emberStart(trans);
 
-  const radioTxPower = options.radioPower;
-  let status = await ezsp.ezspSetRadioPower(radioTxPower); // radio transmit power [-128-127] dBm
-  if (status !== SLStatus.OK) {
-    throw new Error(`Failed to set transmit power to ${radioTxPower} status=${SLStatus[status]}.`);
-  }
+    const radioTxPower = options.radioPower;
+    let status = await ezsp.ezspSetRadioPower(radioTxPower); // radio transmit power [-128-127] dBm
+    if (status !== SLStatus.OK) {
+      throw new Error(`Failed to set transmit power to ${radioTxPower} status=${SLStatus[status]}.`);
+    }
 
-  status = await ezsp.mfglibInternalStart(true);
-  if (status !== SLStatus.OK) {
-    throw new Error(`Failed to start listening for packets with status=${SLStatus[status]}.`);
-  }
+    status = await ezsp.mfglibInternalStart(true);
+    if (status !== SLStatus.OK) {
+      throw new Error(`Failed to start listening for packets with status=${SLStatus[status]}.`);
+    }
 
-  status = await ezsp.mfglibInternalSetChannel(options.channel);
-  if (status !== SLStatus.OK) {
-    throw new Error(`Failed to set channel with status=${SLStatus[status]}.`);
+    status = await ezsp.mfglibInternalSetChannel(options.channel);
+    if (status !== SLStatus.OK) {
+      throw new Error(`Failed to set channel with status=${SLStatus[status]}.`);
+    }
+
+    if (!trans.isOpen) {
+      throw new Error('Adapter connection closed during initialization.');
+    }
+  } catch (err) {
+    // emberStart can fail after opening the transport.
+    await (ezsp ? emberStop(ezsp) : trans.close()).catch(stopErr => {
+      logger.warning(`Failed to stop adapter: ${stopErr instanceof Error ? stopErr.message : String(stopErr)}`, 'ember-sniff');
+    });
+    throw err;
   }
 
   ezsp.ezspMfglibRxHandler = (linkQuality, rssi, data) => {
@@ -91,16 +106,20 @@ pcapWriteStream.write(createPcapHeader(PCAP_MAGIC_NUMBER_MS));
     pcapWriteStream.write(createPcapPacketRecordMs(data));
   };
 
-  ezsp.once('ncpNeedsResetAndInit', async resetStatus => {
+  const onReset = async resetStatus => {
+    ezsp.off('ncpNeedsResetAndInit', onReset);
+    trans.off('close', onClose);
     logger.error(`Adapter needs reset: status=${EzspStatus[resetStatus]}`, 'ember-sniff');
     if (options.graceful < 1) {
       exit(1);
     }
 
     try { // should not be required, but just in case the adapter is still listening for packets
-      const endStatus = await ezsp.mfglibInternalEnd();
-      if (endStatus !== SLStatus.OK) {
-        logger.warning(`Failed to end listening for packets with status=${SLStatus[endStatus]}. Continuing with re-initialization...`, 'ember-sniff');
+      if (trans.isOpen) {
+        const endStatus = await ezsp.mfglibInternalEnd();
+        if (endStatus !== SLStatus.OK) {
+          logger.warning(`Failed to end listening for packets with status=${SLStatus[endStatus]}. Continuing with re-initialization...`, 'ember-sniff');
+        }
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -112,7 +131,7 @@ pcapWriteStream.write(createPcapHeader(PCAP_MAGIC_NUMBER_MS));
     } catch (err) {
       logger.warning(`Failed to stop adapter: ${err instanceof Error ? err.message : String(err)}. Continuing with re-initialization...`, 'ember-sniff');
     }
-  
+
     for (let backoff = 5;; backoff = Math.min(backoff * 2, 120)) { // exponential backoff for re-initialization attempts, max. 2 minutes
       logger.info(`Attempt to gracefully re-initialize adapter in ${backoff} seconds...`, 'ember-sniff');
       await sleep(backoff * 1000);
@@ -128,7 +147,11 @@ pcapWriteStream.write(createPcapHeader(PCAP_MAGIC_NUMBER_MS));
         }
       }
     }
-  });
+  };
+
+  const onClose = () => onReset(EzspStatus.ERROR_SERIAL_INIT);
+  ezsp.once('ncpNeedsResetAndInit', onReset);
+  trans.once('close', onClose);
 
   return ezsp;
 })();
