@@ -26,6 +26,7 @@ ember-sniff -p <path> -c <channel> [options]
 - `-o, --out <file>` - Output file (default: stdout)
 - `-g, --graceful` - Graceful restarts on adapter failure: `-g` (single attempt), `-gg` (continuously)
 - `-v, --verbose` - Logging: `-v` (basic), `-vv` (more), `-vvv` (debug)
+- `--version` - Print the installed version and exit
 
 ### Examples
 

@@ -24,6 +24,7 @@ const program = new Command();
 program
   .name('ember-sniff')
   .description('ZigBee to PCAP sniffing CLI for EmberZNet-based adapters')
+  .version(requireHere('./package.json').version, '--version')
   .requiredOption('-p, --path <path>', 'Serial port path or TCP address of the EmberZNet adapter')
   .requiredOption('-c, --channel <number>', 'ZigBee channel to sniff (11-26)', parseInt)
   .option('-b, --baud-rate <rate>', 'Serial port baud rate', parseInt)
